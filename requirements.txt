@@ -1,0 +1,4 @@
+boto3
+pymssql
+requests
+cfn_resource_provider>=1.0.6

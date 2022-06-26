@@ -1,0 +1,55 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets available for the RDS DB Instance
+      SubnetIds: !Ref 'Subnets'
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t3.small
+      Engine: sqlserver-ex
+      EngineVersion: 15.00.4198.2.v1
+      VPCSecurityGroups:
+        - !Ref 'DatabaseSecurityGroup'
+      MasterUsername: sa
+      MasterUserPassword: !GetAtt 'DBPassword.Secret'
+      MultiAZ: 'false'
+      Port: '1433'
+      PubliclyAccessible: 'true'
+      DBSubnetGroupName: !Ref 'DBSubnetGroup'
+    DeletionPolicy: Snapshot
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: sqlserver access
+      VpcId: !Ref 'VPC'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '1433'
+          ToPort: '1433'
+          SourceSecurityGroupId: !Ref 'SecurityGroup'
+      SecurityGroupEgress: []
+      Tags:
+        - Key: Name
+          Value: !Sub 'mssql.${AWS::StackName}'
+
+  DBPassword:
+    Type: Custom::Secret
+    Properties:
+      Name: !Sub '/${AWS::StackName}/sqlserver/sa/PGPASSWORD'
+      Alphabet: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+      ReturnSecret: true
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-secret-provider'
+
