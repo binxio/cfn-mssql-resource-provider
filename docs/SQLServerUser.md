@@ -21,15 +21,17 @@ Properties:
 ## Properties
 You can specify the following properties:
 
-- `UserName` - of the user to create
-- `LoginName` - to create the user for
-- `DefaultSchema` - for the user, default `dbo`
-- `URL` - database URL with username, host port and database
-- `Password` - password to connect to the database
-- `PasswordParameterName` - name of the parameter in the store containing the password of the user
+- `UserName` - of the user to create (required)
+- `LoginName` - to create the user for (required)
+- `DefaultSchema` - for the user, default `dbo` (optional)
+- `Server` - server connection
+    - `URL` - jdbc url point to the server to connect  (required)
+    - `Password` - to identify the user with. (optional)
+    - `PasswordParameterName` - name of the parameter in the store containing the password of the user (optional)
 
 Either `Password` or `PasswordParameterName` is required.
 
+Changing the Server URL will not create a new user.
+
 ## Attributes Returned
 `UserName` - of the user
-

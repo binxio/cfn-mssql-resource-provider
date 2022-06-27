@@ -70,7 +70,7 @@ class SQLServerUser(SQLServerResource):
     def url(self):
         return "sqlserver:%s:database:%s:user:%s" % (
             self.logical_resource_id,
-            self.database,
+            self.get_database_id(),
             self.get_user_id(),
         )
 
@@ -78,12 +78,28 @@ class SQLServerUser(SQLServerResource):
     def database(self):
         return self.connection_info["database"]
 
+    def get_database_id(self) -> Optional[str]:
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT database_id FROM master.sys.databases
+                    WHERE name = '{SQLServerResource.safe(self.database)}'
+                    """
+                )
+                rows = cursor.fetchone()
+        except Exception as e:
+            rows = None
+            log.error("%s", e)
+
+        return rows[0] if rows else None
+
     def get_user_id(self) -> Optional[str]:
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute(
                     f"""
-                    SELECT principal_id FROM [{self.database}].sys.database_principals 
+                    SELECT principal_id FROM [{self.database}].sys.database_principals
                     WHERE name = '{SQLServerResource.safe(self.user_name)}'
                     """
                 )

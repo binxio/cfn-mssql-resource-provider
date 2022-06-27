@@ -19,11 +19,13 @@ Properties:
 ## Properties
 You can specify the following properties:
 
-- `Name` - of the database to create
- - `Password` - to identify the user with. 
+- `Name` -  of the database to create (required)
+- `Server` - server connection
+  - `URL` - jdbc url point to the server to connect  (required)
+  - `Password` - to identify the user with. (required or PasswordParameterName)
   - `PasswordParameterName` - name of the parameter in the store containing the password of the user
 
-`Name` and Either `Password` or `PasswordParameterName` is required.
+Changing the Server URL will not create a new database once it is created.
 
 ## Attributes Returned
 `Name` - the name of the database
