@@ -1,0 +1,183 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Private subnets for default VPC
+Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  cidrBlockVpc:
+    Default: 172.31.0.0/16
+    Type: String
+    Description: Default VPC CIDR block
+    AllowedPattern: ((\d{1,3})\.){3}\d{1,3}/16
+Resources:
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'VPC'
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Sub '${AWS::Region}a'
+      CidrBlock: !Select
+        - 4
+        - !Cidr
+          - !Ref 'cidrBlockVpc'
+          - 16
+          - 12
+      Tags:
+        - Key: Name
+          Value: PrivateSubnetA
+        - Key: Layer
+          Value: private
+
+  PrivateRouteTableAAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref 'PrivateSubnetA'
+      RouteTableId: !Ref 'PrivateRouteTableA'
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'VPC'
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTableA
+        - Key: Layer
+          Value: private
+
+  PrivateNATARoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref 'PrivateRouteTableA'
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref 'NATA'
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'VPC'
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Sub '${AWS::Region}b'
+      CidrBlock: !Select
+        - 5
+        - !Cidr
+          - !Ref 'cidrBlockVpc'
+          - 16
+          - 12
+      Tags:
+        - Key: Name
+          Value: PrivateSubnetB
+        - Key: Layer
+          Value: private
+
+  PrivateRouteTableBAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref 'PrivateSubnetB'
+      RouteTableId: !Ref 'PrivateRouteTableB'
+
+  PrivateRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'VPC'
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTableB
+        - Key: Layer
+          Value: private
+
+  PrivateNATBRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref 'PrivateRouteTableB'
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref 'NATB'
+
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'VPC'
+      MapPublicIpOnLaunch: false
+      AvailabilityZone: !Sub '${AWS::Region}c'
+      CidrBlock: !Select
+        - 6
+        - !Cidr
+          - !Ref 'cidrBlockVpc'
+          - 16
+          - 12
+      Tags:
+        - Key: Name
+          Value: PrivateSubnetC
+        - Key: Layer
+          Value: private
+
+  PrivateRouteTableCAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref 'PrivateSubnetC'
+      RouteTableId: !Ref 'PrivateRouteTableC'
+
+  PrivateNATCRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref 'PrivateRouteTableC'
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref 'NATC'
+
+  PrivateRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'VPC'
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTableC
+        - Key: Layer
+          Value: private
+
+  NATA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt 'EIPA.AllocationId'
+      SubnetId: !Select
+        - 0
+        - !Ref 'Subnets'
+      Tags:
+        - Key: Name
+          Value: A
+
+  EIPA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NATB:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt 'EIPB.AllocationId'
+      SubnetId: !Select
+        - 0
+        - !Ref 'Subnets'
+      Tags:
+        - Key: Name
+          Value: B
+
+  EIPB:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NATC:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt 'EIPC.AllocationId'
+      SubnetId: !Select
+        - 0
+        - !Ref 'Subnets'
+      Tags:
+        - Key: Name
+          Value: C
+
+  EIPC:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc

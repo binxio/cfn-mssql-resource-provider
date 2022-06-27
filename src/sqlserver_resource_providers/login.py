@@ -15,35 +15,32 @@ request_schema = {
     "type": "object",
     "oneOf": [
         {"required": ["Server", "LoginName", "Password"]},
-        {"required": ["Server", "LoginName", "PasswordParameterName"]}
+        {"required": ["Server", "LoginName", "PasswordParameterName"]},
     ],
     "properties": {
         "Server": connection_info.request_schema,
         "LoginName": {
             "type": "string",
             "pattern": r"^[^\[\]]*$",
-            "description": "the login name in to create"
+            "description": "the login name in to create",
         },
         "DefaultDatabase": {
             "type": "string",
             "pattern": r"^[^\[\]]*$",
             "default": "master",
-            "description": "the default database name to login to"
+            "description": "the default database name to login to",
         },
-        "Password": {
-            "type": "string",
-            "description": "the password for the login"
-        },
+        "Password": {"type": "string", "description": "the password for the login"},
         "PasswordParameterName": {
             "type": "string",
             "minLength": 1,
-            "description": "the name of the password in the Parameter Store."
+            "description": "the name of the password in the Parameter Store.",
         },
     },
 }
 
-class SQLServerLogin(SQLServerResource):
 
+class SQLServerLogin(SQLServerResource):
     def __init__(self):
         super(SQLServerLogin, self).__init__()
         self.request_schema = request_schema
@@ -54,28 +51,30 @@ class SQLServerLogin(SQLServerResource):
 
     @property
     def login_name(self):
-        return self.get('LoginName')
+        return self.get("LoginName")
 
     @property
     def old_login_name(self):
-        return self.get_old('LoginName', self.login_name)
+        return self.get_old("LoginName", self.login_name)
 
     @property
     def default_database(self):
-        return self.get('DefaultDatabase')
+        return self.get("DefaultDatabase")
 
     @property
     def url(self):
-        return "sqlserver:{}:{}:login:{}".format(self.connection_info['host'],
-                                                 self.connection_info['port'],
-                                                 self.get_principal_id())
+        return "sqlserver:{}:login:{}".format(
+            self.logical_resource_id,
+            self.get_principal_id(),
+        )
 
     def get_principal_id(self) -> Optional[str]:
         rows = []
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute(
-                    f"SELECT principal_id FROM master.sys.server_principals WHERE name = '{SQLServerResource.safe(self.login_name)}'")
+                    f"SELECT principal_id FROM master.sys.server_principals WHERE name = '{SQLServerResource.safe(self.login_name)}'"
+                )
                 rows = cursor.fetchone()
         except Exception as e:
             logging.error("%s", e)
@@ -83,31 +82,36 @@ class SQLServerLogin(SQLServerResource):
         return rows[0] if rows else None
 
     def drop_login(self):
-        log.info('drop login %s', self.login_name)
+        log.info("drop login %s", self.login_name)
         with self.connection.cursor() as cursor:
-            cursor.execute(f'DROP LOGIN [{self.login_name}]')
+            cursor.execute(f"DROP LOGIN [{self.login_name}]")
 
     def update_login(self):
-        log.info('update login %s', self.login_name)
+        log.info("update login %s", self.login_name)
         with self.connection.cursor() as cursor:
             if self.old_login_name != self.login_name:
-                cursor.execute(f"""
+                cursor.execute(
+                    f"""
                    ALTER LOGIN [{self.old_login_name}]
                    WITH PASSWORD = '{SQLServerResource.safe(self.password)}',
                         NAME = [{self.login_name}],
                         DEFAULT_DATABASE = [{self.default_database}]
-                   """)
+                   """
+                )
             else:
-                cursor.execute(f"""
+                cursor.execute(
+                    f"""
                    ALTER LOGIN [{self.login_name}]
                    WITH PASSWORD = '{SQLServerResource.safe(self.password)}',
                         DEFAULT_DATABASE = [{self.default_database}]
-                   """)
+                   """
+                )
 
             self.physical_resource_id = self.url
+            self.set_attribute("LoginName", self.login_name)
 
     def create_login(self):
-        log.info('create login %s', self.login_name)
+        log.info("create login %s", self.login_name)
         with self.connection.cursor() as cursor:
             sql = f"""
                CREATE LOGIN [{self.login_name}]
@@ -115,15 +119,17 @@ class SQLServerLogin(SQLServerResource):
                     DEFAULT_DATABASE = [{self.default_database}]
                """
             cursor.execute(sql)
+
             self.physical_resource_id = self.url
+            self.set_attribute("LoginName", self.login_name)
 
     def create(self):
         try:
             self.connect()
             self.create_login()
         except Exception as e:
-            self.physical_resource_id = 'could-not-create'
-            self.fail('Failed to create user, %s' % e)
+            self.physical_resource_id = "could-not-create"
+            self.fail("Failed to create user, %s" % e)
         finally:
             self.close()
 
@@ -132,13 +138,13 @@ class SQLServerLogin(SQLServerResource):
             self.connect()
             self.update_login()
         except Exception as e:
-            self.fail('Failed to update the login, %s' % e)
+            self.fail("Failed to update the login, %s" % e)
         finally:
             self.close()
 
     def delete(self):
-        if self.physical_resource_id == 'could-not-create':
-            self.success('login was never created')
+        if self.physical_resource_id == "could-not-create":
+            self.success("login was never created")
 
         try:
             self.connect()

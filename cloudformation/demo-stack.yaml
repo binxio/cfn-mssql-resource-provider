@@ -13,6 +13,7 @@ Resources:
     Properties:
       DBSubnetGroupDescription: Subnets available for the RDS DB Instance
       SubnetIds: !Ref 'Subnets'
+
   Database:
     Type: AWS::RDS::DBInstance
     Properties:
@@ -48,8 +49,60 @@ Resources:
   DBPassword:
     Type: Custom::Secret
     Properties:
-      Name: !Sub '/${AWS::StackName}/sqlserver/sa/PGPASSWORD'
+      Name: !Sub '/${AWS::StackName}/sqlserver/sa/password'
       Alphabet: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
       ReturnSecret: true
+      RefreshOnUpdate: true
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-secret-provider'
 
+  KongPassword:
+    Type: Custom::Secret
+    Properties:
+      Name: !Sub '/${AWS::StackName}/sqlserver/kong/password'
+      Alphabet: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+      Required:
+        - Count: 1
+          Alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+        - Count: 1
+          Alphabet: 0123456789
+        - Count: 1
+          Alphabet: '$=+?/!@'
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-secret-provider'
+
+  KongDatabase:
+    Type: Custom::SQLServerDatabase
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: kong2
+      Server:
+        URL: !Sub 'sqlserver://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}'
+        PasswordParameterName: !Sub '/${AWS::StackName}/sqlserver/sa/password'
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-${VPC}'
+
+  KongLogin:
+    Type: Custom::SQLServerLogin
+    DependsOn:
+      - KongDatabase
+    Properties:
+      LoginName: kong
+      DefaultDatabase: !GetAtt KongDatabase.Name
+      PasswordParameterName: !Sub '/${AWS::StackName}/sqlserver/kong/password'
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-${VPC}'
+      Server:
+        URL: !Sub 'sqlserver://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}'
+        PasswordParameterName: !Sub '/${AWS::StackName}/sqlserver/sa/password'
+
+  KongUser:
+    Type: Custom::SQLServerUser
+    Properties:
+      UserName: kong
+      LoginName: !GetAtt KongLogin.LoginName
+      Server:
+        URL: !Sub 'sqlserver://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
+        PasswordParameterName: !Sub '/${AWS::StackName}/sqlserver/sa/password'
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-${VPC}'
+
+Outputs:
+  KongName:
+    Value: !GetAtt KongUser.UserName

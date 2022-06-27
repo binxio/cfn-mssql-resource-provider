@@ -6,27 +6,25 @@ request_schema = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
     "oneOf": [
-        {"required": [ "URL", "Password"]},
-        {"required": [ "URL", "PasswordParameterName"]}
+        {"required": ["URL", "Password"]},
+        {"required": ["URL", "PasswordParameterName"]},
     ],
     "properties": {
         "URL": {
             "type": "string",
             "pattern": "sqlserver://.*",
-            "description": "database connection url"
+            "description": "database connection url",
         },
-        "Password": {
-            "type": "string",
-            "description": "the password of the sa"
-        },
+        "Password": {"type": "string", "description": "the password of the sa"},
         "PasswordParameterName": {
             "type": "string",
-            "description": "the name of the sa password in the Parameter Store"
-        }
-    }
+            "description": "the name of the sa password in the Parameter Store",
+        },
+    },
 }
 
-def from_url(jdbc_url: str, password = None) -> dict:
+
+def from_url(jdbc_url: str, password=None) -> dict:
     """
     create pymssql connection information from `jdbc_url`. if no password was specified and
     `password` will be used.
@@ -57,23 +55,23 @@ def from_url(jdbc_url: str, password = None) -> dict:
     url: ParseResult = urlparse(jdbc_url)
     query = parse_qs(url.query) if url.query else {}
 
-    if url.scheme and url.scheme != 'sqlserver':
-        raise ValueError('unsupport scheme in url')
+    if url.scheme and url.scheme != "sqlserver":
+        raise ValueError("unsupport scheme in url")
 
     connect_info = {
-        'host': url.hostname,
-        'port': url.port if url.port else 1433,
-        'user': unquote(url.username) if url.username else "sa",
-        'database': url.path.strip("/") if url.path else "master",
+        "host": url.hostname,
+        "port": url.port if url.port else 1433,
+        "user": unquote(url.username) if url.username else "sa",
+        "database": url.path.strip("/") if url.path else "master",
     }
 
     if url.password:
-        connect_info['password'] = unquote(url.password)
+        connect_info["password"] = unquote(url.password)
     elif password:
-        connect_info['password'] = password
+        connect_info["password"] = password
 
-    if 'charset' in query:
-        connect_info['charset'] = query['charset'][0]
+    if "charset" in query:
+        connect_info["charset"] = query["charset"][0]
 
     return connect_info
 
@@ -81,14 +79,16 @@ def from_url(jdbc_url: str, password = None) -> dict:
 def get_ssm_password(ssm, name) -> str:
     try:
         response = ssm.get_parameter(Name=name, WithDecryption=True)
-        return response['Parameter']['Value']
+        return response["Parameter"]["Value"]
     except ClientError as e:
-        raise ValueError('Could not obtain password using name {}, {}'.format(name, e))
+        raise ValueError("Could not obtain password using name {}, {}".format(name, e))
 
 
 def _get_password_from_dict(properties: dict, ssm) -> str:
-    if 'Password' in properties:
-        return properties.get('Password')
+    if "Password" in properties:
+        return properties.get("Password")
     else:
-        response = ssm.get_parameter(Name=properties.get('PasswordParameterName'), WithDecryption=True)
-        return response['Parameter']['Value']
+        response = ssm.get_parameter(
+            Name=properties.get("PasswordParameterName"), WithDecryption=True
+        )
+        return response["Parameter"]["Value"]

@@ -13,72 +13,71 @@ request_schema = {
     "type": "object",
     "oneOf": [
         {"required": ["Server", "LoginName", "Password"]},
-        {"required": ["Server", "LoginName", "PasswordParameterName"]}
+        {"required": ["Server", "LoginName", "PasswordParameterName"]},
     ],
     "properties": {
         "Server": connection_info.request_schema,
         "LoginName": {
             "type": "string",
             "pattern": r"^[^\[\]]*$",
-            "description": "the login name in to create"
+            "description": "the login name in to create",
         },
-        "Password": {
-            "type": "string",
-            "description": "the password for the login"
-        },
+        "Password": {"type": "string", "description": "the password for the login"},
         "PasswordParameterName": {
             "type": "string",
             "minLength": 1,
-            "description": "the name of the password in the Parameter Store."
+            "description": "the name of the password in the Parameter Store.",
         },
         "DeletionPolicy": {
             "type": "string",
             "default": "Retain",
-            "enum": ["Drop", "Retain"]
-        }
+            "enum": ["Drop", "Retain"],
+        },
     },
 }
 
-class SQLServerResource(ResourceProvider):
 
+class SQLServerResource(ResourceProvider):
     def __init__(self):
         super(SQLServerResource, self).__init__()
-        self.ssm = boto3.client('ssm')
+        self.ssm = boto3.client("ssm")
         self.connection = None
         self.connection_info = {}
 
     def convert_property_types(self):
         self.heuristic_convert_property_types(self.properties)
-        self.connection_info = connection_info.from_url(self.server_url, self.server_password)
+        self.connection_info = connection_info.from_url(
+            self.server_url, self.server_password
+        )
 
     @property
     def deletion_policy(self):
-        return self.get('DeletionPolicy')
+        return self.get("DeletionPolicy")
 
     @property
     def server_url(self):
-        return self.get("Server",{}).get("URL", "")
+        return self.get("Server", {}).get("URL", "")
 
     @property
     def old_server_url(self):
-        return self.get_old("Server",{}).get("URL", "")
+        return self.get_old("Server", {}).get("URL", self.server_url)
 
     @property
     def server_password(self) -> str:
         return _get_password_from_dict(self.get("Server"), self.ssm)
 
-    def connect(self, autocommit:bool=False):
+    def connect(self, autocommit: bool = False):
         try:
             self.connection = pymssql.connect(**self.connection_info)
             self.connection.autocommit(autocommit)
         except Exception as e:
-            raise ValueError('Failed to connect, %s' % e)
+            raise ValueError("Failed to connect, %s" % e)
 
     def close(self):
         if not self.connection:
             return
 
-        if self.status == 'SUCCESS':
+        if self.status == "SUCCESS":
             self.connection.commit()
         else:
             self.connection.rollback()

@@ -1,6 +1,6 @@
 include Makefile.mk
 
-NAME=cfn-sqlserver-resource--provider
+NAME=cfn-sqlserver-resource-provider
 AWS_REGION=eu-central-1
 S3_BUCKET_PREFIX=binxio-public
 S3_BUCKET=$(S3_BUCKET_PREFIX)-$(AWS_REGION)
@@ -18,6 +18,7 @@ help:
 	@echo 'make delete-provider - deletes the provider.'
 	@echo 'make demo            - deploys the provider and the demo cloudformation stack.'
 	@echo 'make delete-demo     - deletes the demo cloudformation stack.'
+	@echo 'make private-subnets  -  adds private subnets to default vpc'
 
 deploy: target/$(NAME)-$(VERSION).zip
 	aws s3 --region $(AWS_REGION) \
@@ -76,20 +77,34 @@ test: venv
 autopep:
 	autopep8 --experimental --in-place --max-line-length 132 src/*.py tests/*.py
 
+deploy-provider: VPC_ID=$(shell bin/get-default-vpc)
+deploy-provider: SUBNET_IDS=$(shell bin/get-private-subnets | tr '\n' ',' | sed -e s'/,$$//')
+deploy-provider: SG_ID=$(shell bin/get-default-security-group)
 deploy-provider:
-	@export VPC_ID=$$(aws ec2  --output text --query 'Vpcs[?IsDefault].VpcId' describe-vpcs) ; \
-        export SUBNET_IDS=$$(aws ec2 --output text --query 'RouteTables[?Routes[?GatewayId == null]].Associations[].SubnetId' \
-                                describe-route-tables --filters Name=vpc-id,Values=$$VPC_ID | tr '\t' ','); \
-	export SG_ID=$$(aws ec2 --output text --query "SecurityGroups[*].GroupId" \
-				describe-security-groups --group-names default  --filters Name=vpc-id,Values=$$VPC_ID); \
-	([[ -z $$VPC_ID ]] || [[ -z $$SUBNET_IDS ]] || [[ -z $$SG_ID ]]) && \
-		echo "Either there is no default VPC in your account, no private subnets or no default security group available in the default VPC" && exit 1 ; \
-	echo "deploy provider in default VPC $$VPC_ID, private subnets $$SUBNET_IDS using security group $$SG_ID." ; \
+	@if [[ -z  "$(VPC_ID)" ]] || [[ -z "$(SUBNET_IDS)" ]] || [[ -z "$(SG_ID)" ]]; then \
+		echo "Either there is no default VPC in your account, no private subnets or no default security group available in the default VPC";\
+		exit 1; \
+	fi
+	echo "deploy provider in default VPC $(VPC_ID), private subnets $(SUBNET_IDS) using security group $(SG_ID)." ; \
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_IAM \
 		--stack-name $(NAME) \
 		--template ./cloudformation/cfn-resource-provider.yaml  \
-		--parameter-overrides VPC=$$VPC_ID Subnets=$$SUBNET_IDS SecurityGroup=$$SG_ID
+		--parameter-overrides VPC=$(VPC_ID) Subnets=$(SUBNET_IDS) SecurityGroup=$(SG_ID)
+
+private-subnets: VPC_ID=$(shell bin/get-default-vpc)
+private-subnets: SUBNET_IDS=$(shell bin/get-public-subnets $(VPC_ID) | tr '\n' ',' | sed -e 's/,$$//')
+private-subnets:
+	@if [[ -z  "$(VPC_ID)" ]] || [[ -z "$(SUBNET_IDS)" ]] ; then \
+		echo "Either there is no default VPC in your account or no public subnets in the default VP";\
+		exit 1; \
+	fi
+	echo "deploy private subnets in default VPC $(VPC_ID)" ; \
+	aws cloudformation deploy \
+		--stack-name private-subnets-for-default-vpc \
+		--template ./cloudformation/private-subnets-for-default-vpc.yaml  \
+		--parameter-overrides VPC=$(VPC_ID) Subnets=$(SUBNET_IDS)
+
 
 delete-provider:
 	aws cloudformation delete-stack --stack-name $(NAME)
@@ -111,7 +126,11 @@ demo:
 
 deploy-secret-provider:
 	curl -sS -o /tmp/cfn-secret-provider.yaml https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-1.4.4.yaml
-	aws cloudformation deploy --stack-name cfn-secret-provider --template-file /tmp/cfn-secret-provider.yaml  --no-fail-on-empty-changeset
+	aws cloudformation deploy \
+		--stack-name cfn-secret-provider \
+		--template-file /tmp/cfn-secret-provider.yaml  \
+                --capabilities CAPABILITY_IAM \
+		--no-fail-on-empty-changeset
 
 
 delete-demo:
