@@ -12,7 +12,7 @@ Properties:
   Password: String
   PasswordParameterName: String
   Server:
-    URL: sqlserver://<user>@<host>:<port>/<database>
+    URL: sqlserver://<user>@<host>:<port>/master
     Password: String
     PasswordParameterName: String
   ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-vpc-${AppVPC}'
@@ -32,7 +32,9 @@ You can specify the following properties:
 
 `Name` and Either `Password` or `PasswordParameterName` are required.
 
-Changing the Server URL will not create a new user once it is created.
+## Caveats
+- The logical resource is tied to the same logical database instance, changing the Server URL
+  will not create a new login on another server once it is created.
 
 ## Attributes Returned
 `LoginName` - the name of the database

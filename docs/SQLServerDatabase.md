@@ -25,7 +25,9 @@ You can specify the following properties:
   - `Password` - to identify the user with. (required or PasswordParameterName)
   - `PasswordParameterName` - name of the parameter in the store containing the password of the user
 
-Changing the Server URL will not create a new database once it is created.
+## Caveats
+- The logical resource is tied to the same logical database instance, changing the Server URL 
+  will not create a new database on another server once it is created.
 
 ## Attributes Returned
 `Name` - the name of the database

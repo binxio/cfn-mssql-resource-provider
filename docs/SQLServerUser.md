@@ -1,6 +1,5 @@
 # Custom::SQLServerUser
-The `Custom::PostgresSQLUser` resource creates a SQLServer database user.
-
+The `Custom::SQLServerUser` resource creates a SQLServer database user.
 
 ## Syntax
 To declare this entity in your AWS CloudFormation template, use the following syntax:
@@ -29,9 +28,12 @@ You can specify the following properties:
     - `Password` - to identify the user with. (optional)
     - `PasswordParameterName` - name of the parameter in the store containing the password of the user (optional)
 
-Either `Password` or `PasswordParameterName` is required.
+Either `Password` or `PasswordParameterName` is required. 
 
-Changing the Server URL will not create a new user.
+# Caveats
+- The logical resource is tied to the same logical database instance, changing the Server URL
+  will not create a new user on another server once it is created. Changing the database in the
+  URL will move it to the other logical database.
 
 ## Attributes Returned
 `UserName` - of the user
