@@ -87,9 +87,7 @@ class SQLServerDatabase(SQLServerResource):
             self.close()
 
     def update(self):
-        if self.server_url != self.old_server_url:
-            self.create()
-        elif self.name != self.old_name:
+        if self.name != self.old_name:
             if not self.get_database_id():
                 self.rename_database()
             else:
