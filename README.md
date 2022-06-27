@@ -21,8 +21,6 @@ It is quite easy: you specify a CloudFormation resource of the [Custom::SQLServe
 
   KongLogin:
     Type: Custom::SQLServerLogin
-    DependsOn:
-      - KongDatabase
     Properties:
       LoginName: kong
       DefaultDatabase: !GetAtt KongDatabase.Name

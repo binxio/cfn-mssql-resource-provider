@@ -82,8 +82,6 @@ Resources:
 
   KongLogin:
     Type: Custom::SQLServerLogin
-    DependsOn:
-      - KongDatabase
     Properties:
       LoginName: kong
       DefaultDatabase: !GetAtt KongDatabase.Name
