@@ -12,7 +12,7 @@ help:
 	@echo 'make release         - builds a zip file and deploys it to s3.'
 	@echo 'make clean           - the workspace.'
 	@echo 'make test            - execute the tests, requires a working AWS connection.'
-	@echo 'make deploy	    - lambda to bucket $(S3_BUCKET)'
+	@echo 'make deploy	    	- lambda to bucket $(S3_BUCKET)'
 	@echo 'make deploy-all-regions - lambda to all regions with bucket prefix $(S3_BUCKET_PREFIX)'
 	@echo 'make deploy-provider - deploys the provider.'
 	@echo 'make delete-provider - deletes the provider.'
@@ -74,8 +74,8 @@ test: venv
 	cd src && \
         PYTHONPATH=$(PWD)/src pytest ../tests/test*.py
 
-autopep:
-	autopep8 --experimental --in-place --max-line-length 132 src/*.py tests/*.py
+fmt:
+	black src/* tests/
 
 deploy-provider: VPC_ID=$(shell bin/get-default-vpc)
 deploy-provider: SUBNET_IDS=$(shell bin/get-private-subnets | tr '\n' ',' | sed -e s'/,$$//')
@@ -85,7 +85,10 @@ deploy-provider:
 		echo "Either there is no default VPC in your account, no private subnets or no default security group available in the default VPC";\
 		exit 1; \
 	fi
-	echo "deploy provider in default VPC $(VPC_ID), private subnets $(SUBNET_IDS) using security group $(SG_ID)." ; \
+	@echo "deploy provider in default VPC $(VPC_ID), private subnets $(SUBNET_IDS) using security group $(SG_ID)."
+	@sed -i '.bak' \
+		-e 's^lambdas/cfn-sqlserver-resource-provider-[0-9]*\.[0-9]*\.[0-9]*[^\.]*\.^lambdas/cfn-sqlserver-resource-provider-$(VERSION).^' \
+		cloudformation/cfn-resource-provider.yaml
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_IAM \
 		--stack-name $(NAME) \
