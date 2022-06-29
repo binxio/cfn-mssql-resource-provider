@@ -12,7 +12,7 @@ request_schema = {
     "properties": {
         "URL": {
             "type": "string",
-            "pattern": "sqlserver://.*",
+            "pattern": "mssql://.*",
             "description": "database connection url",
         },
         "Password": {"type": "string", "description": "the password of the sa"},
@@ -30,32 +30,32 @@ def from_url(jdbc_url: str, password=None) -> dict:
     `password` will be used.
     default user is `sa`. default port is 1433. default database is `master`.
 
-    >>> from_url("sqlserver://mssql") # default user, port and database
+    >>> from_url("mssql://mssql") # default user, port and database
     {'host': 'mssql', 'port': 1433, 'user': 'sa', 'database': 'master'}
     >>> from_url("//mssql") # no scheme
     {'host': 'mssql', 'port': 1433, 'user': 'sa', 'database': 'master'}
-    >>> from_url("sqlserver://dbo@mssql") # alternate user
+    >>> from_url("mssql://dbo@mssql") # alternate user
     {'host': 'mssql', 'port': 1433, 'user': 'dbo', 'database': 'master'}
-    >>> from_url("sqlserver://dbo@mssql/thisone") # alternate database
+    >>> from_url("mssql://dbo@mssql/thisone") # alternate database
     {'host': 'mssql', 'port': 1433, 'user': 'dbo', 'database': 'thisone'}
-    >>> from_url("sqlserver://dbo@mssql:1444/thisone") # alternate port
+    >>> from_url("mssql://dbo@mssql:1444/thisone") # alternate port
     {'host': 'mssql', 'port': 1444, 'user': 'dbo', 'database': 'thisone'}
-    >>> from_url("sqlserver://dbo:p%40ssword@mssql:1444/thisone") # with password
+    >>> from_url("mssql://dbo:p%40ssword@mssql:1444/thisone") # with password
     {'host': 'mssql', 'port': 1444, 'user': 'dbo', 'database': 'thisone', 'password': 'p@ssword'}
-    >>> from_url("sqlserver://dbo:p%40ssword@mssql:1444/thisone?charset=utf-8") # with password
+    >>> from_url("mssql://dbo:p%40ssword@mssql:1444/thisone?charset=utf-8") # with password
     {'host': 'mssql', 'port': 1444, 'user': 'dbo', 'database': 'thisone', 'password': 'p@ssword', 'charset': 'utf-8'}
     >>> from_url("https://mssql") # invalid scheme
     Traceback (most recent call last):
     ...
     ValueError: unsupport scheme in url
-    >>> from_url("sqlserver://mssql", "MyPassWord") # default user, port and database
+    >>> from_url("mssql://mssql", "MyPassWord") # default user, port and database
     {'host': 'mssql', 'port': 1433, 'user': 'sa', 'database': 'master', 'password': 'MyPassWord'}pyth
 
     """
     url: ParseResult = urlparse(jdbc_url)
     query = parse_qs(url.query) if url.query else {}
 
-    if url.scheme and url.scheme != "sqlserver":
+    if url.scheme and url.scheme != "mssql":
         raise ValueError("unsupport scheme in url")
 
     connect_info = {

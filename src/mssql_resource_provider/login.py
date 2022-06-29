@@ -4,9 +4,9 @@ import pymssql
 from botocore.exceptions import ClientError
 from cfn_resource_provider import ResourceProvider
 from typing import Optional
-from sqlserver_resource_providers import connection_info
-from sqlserver_resource_providers.base import SQLServerResource
-from sqlserver_resource_providers.connection_info import _get_password_from_dict
+from mssql_resource_provider import connection_info
+from mssql_resource_provider.base import MSSQLResource
+from mssql_resource_provider.connection_info import _get_password_from_dict
 
 log = logging.getLogger()
 
@@ -40,9 +40,9 @@ request_schema = {
 }
 
 
-class SQLServerLogin(SQLServerResource):
+class MSSQLLogin(MSSQLResource):
     def __init__(self):
-        super(SQLServerLogin, self).__init__()
+        super(MSSQLLogin, self).__init__()
         self.request_schema = request_schema
 
     @property
@@ -63,7 +63,7 @@ class SQLServerLogin(SQLServerResource):
 
     @property
     def url(self):
-        return "sqlserver:{}:login:{}".format(
+        return "mssql:{}:login:{}".format(
             self.logical_resource_id,
             self.get_principal_id(),
         )
@@ -73,7 +73,7 @@ class SQLServerLogin(SQLServerResource):
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute(
-                    f"SELECT principal_id FROM master.sys.server_principals WHERE name = '{SQLServerResource.safe(self.login_name)}'"
+                    f"SELECT principal_id FROM master.sys.server_principals WHERE name = '{MSSQLResource.safe(self.login_name)}'"
                 )
                 rows = cursor.fetchone()
         except Exception as e:
@@ -93,7 +93,7 @@ class SQLServerLogin(SQLServerResource):
                 cursor.execute(
                     f"""
                    ALTER LOGIN [{self.old_login_name}]
-                   WITH PASSWORD = '{SQLServerResource.safe(self.password)}',
+                   WITH PASSWORD = '{MSSQLResource.safe(self.password)}',
                         NAME = [{self.login_name}],
                         DEFAULT_DATABASE = [{self.default_database}]
                    """
@@ -102,7 +102,7 @@ class SQLServerLogin(SQLServerResource):
                 cursor.execute(
                     f"""
                    ALTER LOGIN [{self.login_name}]
-                   WITH PASSWORD = '{SQLServerResource.safe(self.password)}',
+                   WITH PASSWORD = '{MSSQLResource.safe(self.password)}',
                         DEFAULT_DATABASE = [{self.default_database}]
                    """
                 )
@@ -115,7 +115,7 @@ class SQLServerLogin(SQLServerResource):
         with self.connection.cursor() as cursor:
             sql = f"""
                CREATE LOGIN [{self.login_name}]
-               WITH PASSWORD = '{SQLServerResource.safe(self.password)}',
+               WITH PASSWORD = '{MSSQLResource.safe(self.password)}',
                     DEFAULT_DATABASE = [{self.default_database}]
                """
             cursor.execute(sql)
@@ -156,7 +156,7 @@ class SQLServerLogin(SQLServerResource):
             self.close()
 
 
-provider = SQLServerLogin()
+provider = MSSQLLogin()
 
 
 def handler(request, context):

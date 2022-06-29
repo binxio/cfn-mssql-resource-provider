@@ -6,8 +6,8 @@ import uuid
 from unittest import TestCase
 import pymssql
 
-from sqlserver_resource_providers import handler
-from sqlserver_resource_providers.connection_info import from_url
+from mssql_resource_provider import handler
+from mssql_resource_provider.connection_info import from_url
 
 logging.basicConfig(level=logging.INFO)
 
@@ -32,13 +32,13 @@ class Event(dict):
                 "ResponseURL": "https://httpbin.org/put",
                 "StackId": "arn:aws:cloudformation:us-west-2:EXAMPLE/stack-name/guid",
                 "RequestId": "request-%s" % str(uuid.uuid4()),
-                "ResourceType": "Custom::SQLServerUser",
+                "ResourceType": "Custom::MSSQLUser",
                 "LogicalResourceId": "Whatever",
                 "ResourceProperties": {
                     "UserName": user_name,
                     "LoginName": login_name,
                     "Server": {
-                        "URL": "sqlserver://localhost:1444/master",
+                        "URL": "mssql://localhost:1444/master",
                         "Password": "P@ssW0rd",
                     },
                 },
@@ -69,9 +69,9 @@ class Event(dict):
                 return row and row[0] == name
 
 
-class SQLServerUserTestCase(TestCase):
+class MSSQLUserTestCase(TestCase):
     def __init__(self, tests):
-        super(SQLServerUserTestCase, self).__init__(tests)
+        super(MSSQLUserTestCase, self).__init__(tests)
         self.login_name = random_name()
 
     def tearDown(self) -> None:
@@ -117,7 +117,7 @@ class SQLServerUserTestCase(TestCase):
         assert "PhysicalResourceId" in response
         physical_resource_id = response["PhysicalResourceId"]
         assert re.match(
-            r"^sqlserver:[^:]+:database:[^:]+:user:[0-9]+$", physical_resource_id
+            r"^mssql:[^:]+:database:[^:]+:user:[0-9]+$", physical_resource_id
         )
 
         assert event.user_exists()
@@ -147,13 +147,13 @@ class SQLServerUserTestCase(TestCase):
         physical_resource_id = response["PhysicalResourceId"]
         assert create_event.user_exists()
         assert re.match(
-            r"^sqlserver:[^:]+:database:[^:]+:user:[0-9]+$", physical_resource_id
+            r"^mssql:[^:]+:database:[^:]+:user:[0-9]+$", physical_resource_id
         )
 
         # move user to other db
         event = Event("Update", name, self.login_name, physical_resource_id)
         event["ResourceProperties"]["Server"] = {
-            "URL": "sqlserver://localhost:1444/alt_db",
+            "URL": "mssql://localhost:1444/alt_db",
             "Password": "P@ssW0rd",
         }
         response = handler(event, {})
@@ -161,7 +161,7 @@ class SQLServerUserTestCase(TestCase):
         physical_resource_id_2 = response["PhysicalResourceId"]
         assert physical_resource_id_2 != physical_resource_id
         assert re.match(
-            r"^sqlserver:[^:]+:database:[^:]+:user:[0-9]+$", physical_resource_id_2
+            r"^mssql:[^:]+:database:[^:]+:user:[0-9]+$", physical_resource_id_2
         )
 
         assert event.user_exists()

@@ -4,7 +4,7 @@ import logging
 from typing import Union
 from unittest import TestCase
 from cfn_resource_provider import ResourceProvider
-import sqlserver_resource_providers
+import mssql_resource_provider
 
 
 class Request:
@@ -167,7 +167,7 @@ class CloudformationCustomProviderTestCase(TestCase):
         return success
 
     def setUp(self) -> None:
-        self.provider = sqlserver_resource_providers.login.SQLServerLogin()
+        self.provider = mssql_resource_provider.login.MSSQLLogin()
 
     def tearDown(self) -> None:
         if self.provider:
@@ -176,14 +176,14 @@ class CloudformationCustomProviderTestCase(TestCase):
 
     def test_create_login(self):
         request = Request(
-            "Custom::SQLServerLogin",
+            "Custom::MSSQLLogin",
             "Create",
             None,
             {
                 "LoginName": "balbalba1",
                 "Password": "G3he1m!!Echh",
                 "Server": {
-                    "URL": "sqlserver://localhost:1444/master",
+                    "URL": "mssql://localhost:1444/master",
                     "Password": "P@ssW0rd",
                 },
             },

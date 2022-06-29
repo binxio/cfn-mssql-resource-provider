@@ -1,21 +1,21 @@
-# Custom::SQLServerLogin
-The `Custom::SQLServerLogin` resource creates a SQLServer login
+# Custom::MSSQLLogin
+The `Custom::MSSQLLogin` resource creates a MSSQL login
 
 ## Syntax
 To declare this entity in your AWS CloudFormation template, use the following syntax:
 
 ```yaml
-Type: Custom::SQLServerLogin
+Type: Custom::MSSQLLogin
 Properties:
   LoginName: String
   DefaultDatabase: String
   Password: String
   PasswordParameterName: String
   Server:
-    URL: sqlserver://<user>@<host>:<port>/master
+    URL: mssql://<user>@<host>:<port>/master
     Password: String
     PasswordParameterName: String
-  ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-vpc-${AppVPC}'
+  ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-vpc-${AppVPC}'
 ```
 
 ## Properties

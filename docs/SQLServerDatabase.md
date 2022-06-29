@@ -1,19 +1,19 @@
-# Custom::SQLServerDatabase
-The `Custom::SQLServerDatabase` resource creates a SQLServer database
+# Custom::MSSQLDatabase
+The `Custom::MSSQLDatabase` resource creates a MSSQL database
 
 
 ## Syntax
 To declare this entity in your AWS CloudFormation template, use the following syntax:
 
 ```yaml
-Type: Custom::SQLServerDatabase
+Type: Custom::MSSQLDatabase
 Properties:
   Name: String
   Server:
-    URL: sqlserver://<user>@<host>:<port>/master
+    URL: mssql://<user>@<host>:<port>/master
     Password: password
     PasswordParameterName: name
-  ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-vpc-${AppVPC}'
+  ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-vpc-${AppVPC}'
 ```
 
 ## Properties

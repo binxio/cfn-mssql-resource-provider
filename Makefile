@@ -1,6 +1,6 @@
 include Makefile.mk
 
-NAME=cfn-sqlserver-resource-provider
+NAME=cfn-mssql-resource-provider
 AWS_REGION=eu-central-1
 S3_BUCKET_PREFIX=binxio-public
 S3_BUCKET=$(S3_BUCKET_PREFIX)-$(AWS_REGION)
@@ -80,14 +80,14 @@ fmt:
 deploy-provider: VPC_ID=$(shell bin/get-default-vpc)
 deploy-provider: SUBNET_IDS=$(shell bin/get-private-subnets | tr '\n' ',' | sed -e s'/,$$//')
 deploy-provider: SG_ID=$(shell bin/get-default-security-group)
-deploy-provider:
+deploy-provider: deploy-secret-provider
 	@if [[ -z  "$(VPC_ID)" ]] || [[ -z "$(SUBNET_IDS)" ]] || [[ -z "$(SG_ID)" ]]; then \
 		echo "Either there is no default VPC in your account, no private subnets or no default security group available in the default VPC";\
 		exit 1; \
 	fi
 	@echo "deploy provider in default VPC $(VPC_ID), private subnets $(SUBNET_IDS) using security group $(SG_ID)."
 	@sed -i '.bak' \
-		-e 's^lambdas/cfn-sqlserver-resource-provider-[0-9]*\.[0-9]*\.[0-9]*[^\.]*\.^lambdas/cfn-sqlserver-resource-provider-$(VERSION).^' \
+		-e 's^lambdas/cfn-mssql-resource-provider-[0-9]*\.[0-9]*\.[0-9]*[^\.]*\.^lambdas/cfn-mssql-resource-provider-$(VERSION).^' \
 		cloudformation/cfn-resource-provider.yaml
 	aws cloudformation deploy \
 		--capabilities CAPABILITY_IAM \

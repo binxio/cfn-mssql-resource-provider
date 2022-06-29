@@ -3,8 +3,8 @@ import logging
 import pymssql
 from cfn_resource_provider import ResourceProvider
 
-from sqlserver_resource_providers import connection_info
-from sqlserver_resource_providers.connection_info import _get_password_from_dict
+from mssql_resource_provider import connection_info
+from mssql_resource_provider.connection_info import _get_password_from_dict
 
 log = logging.getLogger()
 
@@ -37,9 +37,9 @@ request_schema = {
 }
 
 
-class SQLServerResource(ResourceProvider):
+class MSSQLResource(ResourceProvider):
     def __init__(self):
-        super(SQLServerResource, self).__init__()
+        super(MSSQLResource, self).__init__()
         self.ssm = boto3.client("ssm")
         self.connection = None
         self.connection_info = {}

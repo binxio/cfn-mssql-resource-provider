@@ -1,20 +1,20 @@
-# Custom::SQLServerUser
-The `Custom::SQLServerUser` resource creates a SQLServer database user.
+# Custom::MSSQLUser
+The `Custom::MSSQLUser` resource creates a MSSQL database user.
 
 ## Syntax
 To declare this entity in your AWS CloudFormation template, use the following syntax:
 
 ```yaml
-Type: Custom::SQLServerUser
+Type: Custom::MSSQLUser
 Properties:
   Name: String
   LoginName: String
   DefaultSchema: String
   Server:
-    URL: sqlserver://<user>@<host>:<port>/<database>
+    URL: mssql://<user>@<host>:<port>/<database>
     Password: String
     PasswordParameterName: String
-  ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-vpc-${AppVPC}'
+  ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-vpc-${AppVPC}'
 ```
 
 ## Properties

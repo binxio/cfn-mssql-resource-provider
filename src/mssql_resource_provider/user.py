@@ -5,9 +5,9 @@ import pymssql
 from botocore.exceptions import ClientError
 from cfn_resource_provider import ResourceProvider
 
-from sqlserver_resource_providers import connection_info
-from sqlserver_resource_providers.base import SQLServerResource
-from sqlserver_resource_providers.connection_info import _get_password_from_dict
+from mssql_resource_provider import connection_info
+from mssql_resource_provider.base import MSSQLResource
+from mssql_resource_provider.connection_info import _get_password_from_dict
 
 log = logging.getLogger()
 
@@ -41,9 +41,9 @@ request_schema = {
 }
 
 
-class SQLServerUser(SQLServerResource):
+class MSSQLUser(MSSQLResource):
     def __init__(self):
-        super(SQLServerUser, self).__init__()
+        super(MSSQLUser, self).__init__()
         self.request_schema = request_schema
 
     @property
@@ -68,7 +68,7 @@ class SQLServerUser(SQLServerResource):
 
     @property
     def url(self):
-        return "sqlserver:%s:database:%s:user:%s" % (
+        return "mssql:%s:database:%s:user:%s" % (
             self.logical_resource_id,
             self.get_database_id(),
             self.get_user_id(),
@@ -84,7 +84,7 @@ class SQLServerUser(SQLServerResource):
                 cursor.execute(
                     f"""
                     SELECT database_id FROM master.sys.databases
-                    WHERE name = '{SQLServerResource.safe(self.database)}'
+                    WHERE name = '{MSSQLResource.safe(self.database)}'
                     """
                 )
                 rows = cursor.fetchone()
@@ -100,7 +100,7 @@ class SQLServerUser(SQLServerResource):
                 cursor.execute(
                     f"""
                     SELECT principal_id FROM [{self.database}].sys.database_principals
-                    WHERE name = '{SQLServerResource.safe(self.user_name)}'
+                    WHERE name = '{MSSQLResource.safe(self.user_name)}'
                     """
                 )
                 rows = cursor.fetchone()
@@ -191,7 +191,7 @@ class SQLServerUser(SQLServerResource):
             self.close()
 
 
-provider = SQLServerUser()
+provider = MSSQLUser()
 
 
 def handler(request, context):

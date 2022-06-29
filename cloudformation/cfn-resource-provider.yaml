@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation Custom SQLServer Resource Provider
+Description: CloudFormation Custom MSSQL Resource Provider
 Parameters:
   VPC:
     Type: AWS::EC2::VPC::Id
@@ -18,7 +18,7 @@ Resources:
   LambdaPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: CFNCustomSQLServerResourceProviderPolicy
+      PolicyName: CFNCustomMSSQLResourceProviderPolicy
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -57,19 +57,19 @@ Resources:
   CFNCustomProvider:
     Type: AWS::Lambda::Function
     Properties:
-      Description: CloudFormation Custom:SQLServer resource implementation
+      Description: CloudFormation Custom:MSSQL resource implementation
       Code:
         S3Bucket: !If
           - UsePublicBucket
           - !Sub 'binxio-public-${AWS::Region}'
           - !Ref 'LambdaS3Bucket'
-        S3Key: lambdas/cfn-sqlserver-resource-provider-0.1.0.zip
+        S3Key: lambdas/cfn-mssql-resource-provider-0.1.0-36b7d84-dirty.zip
       VpcConfig:
         SecurityGroupIds:
           - !Ref 'SecurityGroup'
         SubnetIds: !Ref 'Subnets'
-      FunctionName: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-sqlserver-resource-provider-${VPC}'
-      Handler: sqlserver_resource_providers.handler
+      FunctionName: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
+      Handler: mssql_resource_provider.handler
       MemorySize: 128
       Timeout: 30
       Role: !GetAtt 'LambdaRole.Arn'

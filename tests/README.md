@@ -1,5 +1,5 @@
 # test
-Before you can test this code, start a local Microsoft SQLServer docker container.
+Before you can test this code, start a local Microsoft MSSQL docker container.
 
 ```
 docker run --cap-add SYS_PTRACE \

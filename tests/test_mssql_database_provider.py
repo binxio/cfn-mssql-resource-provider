@@ -10,8 +10,8 @@ import pymssql
 from pymssql import _mssql
 
 
-from sqlserver_resource_providers import handler
-from sqlserver_resource_providers.connection_info import from_url
+from mssql_resource_provider import handler
+from mssql_resource_provider.connection_info import from_url
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,12 +29,12 @@ class Event(dict):
                 "ResponseURL": "https://httpbin.org/put",
                 "StackId": "arn:aws:cloudformation:us-west-2:EXAMPLE/stack-name/guid",
                 "RequestId": "request-%s" % str(uuid.uuid4()),
-                "ResourceType": "Custom::SQLServerDatabase",
+                "ResourceType": "Custom::MSSQLDatabase",
                 "LogicalResourceId": "Whatever",
                 "ResourceProperties": {
                     "Name": db_name,
                     "Server": {
-                        "URL": "sqlserver://localhost:1444",
+                        "URL": "mssql://localhost:1444",
                         "Password": "P@ssW0rd",
                     },
                 },
@@ -59,7 +59,7 @@ class Event(dict):
                 return row and row[0] == name
 
 
-class SQLServerDatabaseTestCase(TestCase):
+class MSSQLDatabaseTestCase(TestCase):
     @staticmethod
     def setUpClass() -> None:
         with _mssql.connect(
@@ -113,7 +113,7 @@ class SQLServerDatabaseTestCase(TestCase):
 
         assert "PhysicalResourceId" in response
         physical_resource_id = response["PhysicalResourceId"]
-        assert re.match(r"^sqlserver:[^:]+:database:[0-9]+$", physical_resource_id)
+        assert re.match(r"^mssql:[^:]+:database:[0-9]+$", physical_resource_id)
 
         assert event.database_exists()
 
@@ -141,7 +141,7 @@ class SQLServerDatabaseTestCase(TestCase):
         response = handler(event, {})
         assert response["Status"] == "SUCCESS", response["Reason"]
         physical_resource_id = response["PhysicalResourceId"]
-        assert re.match(r"^sqlserver:[^:]+:database:[0-9]+$", physical_resource_id)
+        assert re.match(r"^mssql:[^:]+:database:[0-9]+$", physical_resource_id)
 
         event = Event("Update", new_name, physical_resource_id)
         event["OldResourceProperties"] = {"Name": name}

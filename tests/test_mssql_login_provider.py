@@ -6,8 +6,8 @@ import pymssql
 import boto3
 import logging
 from hashlib import md5
-from sqlserver_resource_providers import handler
-from sqlserver_resource_providers.connection_info import from_url
+from mssql_resource_provider import handler
+from mssql_resource_provider.connection_info import from_url
 from unittest import TestCase
 
 logging.basicConfig(level=logging.INFO)
@@ -31,14 +31,14 @@ class Event(dict):
                 "ResponseURL": "https://httpbin.org/put",
                 "StackId": "arn:aws:cloudformation:us-west-2:EXAMPLE/stack-name/guid",
                 "RequestId": "request-%s" % str(uuid.uuid4()),
-                "ResourceType": "Custom::SQLServerLogin",
+                "ResourceType": "Custom::MSSQLLogin",
                 "LogicalResourceId": "Whatever",
                 "OldResourceProperties": {},
                 "ResourceProperties": {
                     "LoginName": login_name,
                     "Password": random_password(),
                     "Server": {
-                        "URL": "sqlserver://localhost:1444",
+                        "URL": "mssql://localhost:1444",
                         "Password": "P@ssW0rd",
                     },
                 },
@@ -64,7 +64,7 @@ class Event(dict):
         return pymssql.connect(**args)
 
 
-class SQLServerLoginTestCase(TestCase):
+class MSSQLLoginTestCase(TestCase):
     def setUp(self) -> None:
         with Event("Create", "ladila").test_owner_connection() as c:
             c.autocommit(True)
@@ -110,7 +110,7 @@ class SQLServerLoginTestCase(TestCase):
 
         assert "PhysicalResourceId" in response
         physical_resource_id = response["PhysicalResourceId"]
-        assert re.match(r"^sqlserver:[^:]+:login:[0-9]+$", physical_resource_id)
+        assert re.match(r"^mssql:[^:]+:login:[0-9]+$", physical_resource_id)
 
         try:
             with event.test_user_connection() as connection:
@@ -160,7 +160,7 @@ class SQLServerLoginTestCase(TestCase):
         assert response["Status"] == "SUCCESS", "%s" % response["Reason"]
         assert "PhysicalResourceId" in response
         physical_resource_id = response["PhysicalResourceId"]
-        assert re.match(r"^sqlserver:[^:]+:login:[0-9]+$", physical_resource_id)
+        assert re.match(r"^mssql:[^:]+:login:[0-9]+$", physical_resource_id)
 
         # update the password
         event = Event("Update", name, physical_resource_id)
@@ -179,7 +179,7 @@ class SQLServerLoginTestCase(TestCase):
         assert response["Status"] == "SUCCESS", response["Reason"]
         physical_resource_id_2 = response["PhysicalResourceId"]
 
-        assert re.match(r"^sqlserver:[^:]+:login:[0-9]+$", physical_resource_id_2)
+        assert re.match(r"^mssql:[^:]+:login:[0-9]+$", physical_resource_id_2)
         assert physical_resource_id_2 == physical_resource_id
 
         with event.test_user_connection():
@@ -200,7 +200,7 @@ class SQLServerLoginTestCase(TestCase):
         assert response["Status"] == "SUCCESS", response["Reason"]
 
     def test_invalid_delete(self):
-        event = Event("Delete", "noop", "sqlserver:localhost:1444:noop")
+        event = Event("Delete", "noop", "mssql:localhost:1444:noop")
         del event["ResourceProperties"]["LoginName"]
         response = handler(event, {})
         assert response["Status"] == "SUCCESS", response["Reason"]

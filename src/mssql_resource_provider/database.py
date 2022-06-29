@@ -2,8 +2,8 @@ import logging
 import textwrap
 from typing import Optional
 
-from sqlserver_resource_providers import connection_info
-from sqlserver_resource_providers.base import SQLServerResource
+from mssql_resource_provider import connection_info
+from mssql_resource_provider.base import MSSQLResource
 
 log = logging.getLogger()
 
@@ -23,9 +23,9 @@ request_schema = {
 }
 
 
-class SQLServerDatabase(SQLServerResource):
+class MSSQLDatabase(MSSQLResource):
     def __init__(self):
-        super(SQLServerDatabase, self).__init__()
+        super(MSSQLDatabase, self).__init__()
         self.request_schema = request_schema
 
     @property
@@ -42,7 +42,7 @@ class SQLServerDatabase(SQLServerResource):
                 cursor.execute(
                     f"""
                     SELECT database_id FROM master.sys.databases 
-                    WHERE name = '{SQLServerResource.safe(self.name)}'
+                    WHERE name = '{MSSQLResource.safe(self.name)}'
                     """
                 )
                 rows = cursor.fetchone()
@@ -54,7 +54,7 @@ class SQLServerDatabase(SQLServerResource):
 
     @property
     def url(self):
-        return "sqlserver:%s:database:%s" % (
+        return "mssql:%s:database:%s" % (
             self.logical_resource_id,
             self.get_database_id(),
         )
@@ -110,7 +110,7 @@ class SQLServerDatabase(SQLServerResource):
             self.close()
 
 
-provider = SQLServerDatabase()
+provider = MSSQLDatabase()
 
 
 def handler(request, context):
