@@ -1,14 +1,16 @@
-import sys
-import random, string
-import re
-import uuid
-import pymssql
-import boto3
 import logging
-from hashlib import md5
+import random
+import re
+import string
+import sys
+import uuid
+from unittest import TestCase
+
+import boto3
+import pymssql
+
 from mssql_resource_provider import handler
 from mssql_resource_provider.connection_info import from_url
-from unittest import TestCase
 
 logging.basicConfig(level=logging.INFO)
 

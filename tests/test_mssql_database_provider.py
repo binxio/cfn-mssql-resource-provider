@@ -1,14 +1,13 @@
 import logging
-import textwrap
 import random
 import re
 import string
+import textwrap
 import uuid
 from unittest import TestCase
 
 import pymssql
 from pymssql import _mssql
-
 
 from mssql_resource_provider import handler
 from mssql_resource_provider.connection_info import from_url

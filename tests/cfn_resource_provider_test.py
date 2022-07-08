@@ -53,6 +53,19 @@ class Request:
         self.request["OldResourceProperties"] = properties
 
     @property
+    def physical_resource_id(self):
+        return self.request.get("PhysicalResourceId")
+
+    @physical_resource_id.setter
+    def physical_resource_id(self, value):
+        self.request["PhysicalResourceId"] = value
+
+    def set_property(self, name: str, value):
+        if name in self.resource_properties:
+            self.old_resource_properties[name] = self.resource_properties[name]
+        self.resource_properties[name] = value
+
+    @property
     def response_url(self) -> str:
         return self.request["ResponseURL"]
 
@@ -155,7 +168,7 @@ class CloudformationCustomProviderTestCase(TestCase):
     def delete_all_created_resources(self) -> bool:
         success = True
         for physical_resource_id in list(self.objects.keys()):
-            logging.info("deleeting %s", physical_resource_id)
+            logging.info("deleting %s", physical_resource_id)
             request = self.objects[physical_resource_id]
             if request["RequestType"] != "Delete":
                 error = self.delete_resource(physical_resource_id)
@@ -167,26 +180,9 @@ class CloudformationCustomProviderTestCase(TestCase):
         return success
 
     def setUp(self) -> None:
-        self.provider = mssql_resource_provider.login.MSSQLLogin()
+        self.provider = ResourceProvider()
 
     def tearDown(self) -> None:
         if self.provider:
             ok = self.delete_all_created_resources()
             self.assertTrue(ok, "could not delete all created resources")
-
-    def test_create_login(self):
-        request = Request(
-            "Custom::MSSQLLogin",
-            "Create",
-            None,
-            {
-                "LoginName": "balbalba1",
-                "Password": "G3he1m!!Echh",
-                "Server": {
-                    "URL": "mssql://localhost:1444/master",
-                    "Password": "P@ssW0rd",
-                },
-            },
-        )
-        response = self.handle(request)
-        self.assertEqual("SUCCESS", response["Status"], response["Reason"])
