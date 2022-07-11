@@ -1,4 +1,4 @@
-from mssql_resource_provider import login, user, database, schema
+from mssql_resource_provider import login, user, database, grant
 
 
 def handler(request, context):
@@ -6,7 +6,7 @@ def handler(request, context):
         return database.handler(request, context)
     elif request["ResourceType"] == "Custom::MSSQLUser":
         return user.handler(request, context)
-    elif request["ResourceType"] == "Custom::MSSQLSchema":
-        return schema.handler(request, context)
+    elif request["ResourceType"] == "Custom::MSSQLDatabaseGrant":
+        return grant.handler(request, context)
 
     return login.handler(request, context)

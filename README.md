@@ -1,6 +1,6 @@
 # cfn-mssql-resource-provider
 
-Although CloudFormation is very good in creating Microft MSSQL database servers with Amazon RDS, the mundane task of creating databases, logins and users is not supported. 
+Although CloudFormation is very good in creating Microsoft MSSQL database servers with Amazon RDS, the mundane task of creating databases, logins and users is not supported. 
 This custom MSSQL resource provider automates the provisioning of MSSQL databases, login's and users.
 
 
@@ -35,6 +35,17 @@ It is quite easy: you specify a CloudFormation resource of the [Custom::MSSQLLog
     Properties:
       UserName: kong
       LoginName: !GetAtt KongLogin.LoginName
+      Server:
+        URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
+        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
+
+  KongDatabaseGrant:
+    Type: Custom::MSSQLDatabaseGrant
+    Properties:
+      Permission: ALL
+      UserName: !GetAtt KongUser.UserName
+      Database: !GetAtt KongDatabase.Name
       Server:
         URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
         PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'

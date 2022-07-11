@@ -1,9 +1,8 @@
-import boto3
 import logging
-import pymssql
-from botocore.exceptions import ClientError
-from cfn_resource_provider import ResourceProvider
 from typing import Optional
+
+import pymssql
+
 from mssql_resource_provider import connection_info
 from mssql_resource_provider.base import MSSQLResource
 from mssql_resource_provider.connection_info import _get_password_from_dict
@@ -35,6 +34,10 @@ request_schema = {
             "type": "string",
             "minLength": 1,
             "description": "the name of the password in the Parameter Store.",
+        },
+        "PasswordHash": {
+            "type": "string",
+            "description": "to force an update of the password",
         },
     },
 }
@@ -76,8 +79,8 @@ class MSSQLLogin(MSSQLResource):
                     f"SELECT principal_id FROM master.sys.server_principals WHERE name = '{MSSQLResource.safe(self.login_name)}'"
                 )
                 rows = cursor.fetchone()
-        except Exception as e:
-            logging.error("%s", e)
+        except pymssql.OperationalError:
+            pass
 
         return rows[0] if rows else None
 
@@ -127,9 +130,9 @@ class MSSQLLogin(MSSQLResource):
         try:
             self.connect()
             self.create_login()
-        except Exception as e:
+        except pymssql.StandardError as error:
             self.physical_resource_id = "could-not-create"
-            self.fail("Failed to create user, %s" % e)
+            self.report_failure(error)
         finally:
             self.close()
 
@@ -137,8 +140,8 @@ class MSSQLLogin(MSSQLResource):
         try:
             self.connect()
             self.update_login()
-        except Exception as e:
-            self.fail("Failed to update the login, %s" % e)
+        except pymssql.StandardError as error:
+            self.report_failure(error)
         finally:
             self.close()
 
@@ -150,8 +153,8 @@ class MSSQLLogin(MSSQLResource):
             self.connect()
             if self.get_principal_id():
                 self.drop_login()
-        except Exception as e:
-            return self.fail(str(e))
+        except pymssql.StandardError as error:
+            self.report_failure(error)
         finally:
             self.close()
 

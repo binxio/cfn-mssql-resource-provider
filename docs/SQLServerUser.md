@@ -16,6 +16,16 @@ Properties:
     PasswordParameterName: String
   ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-vpc-${AppVPC}'
 ```
+This will execute the following SQL statement on create:
+```SQL
+   CREATE USER [<UserName>]
+   FOR LOGIN = '<LoginName>',
+   WITH DEFAULT_SCHEMA = [<DefaultSchema>]
+```
+The Name, LoginName and DefaultSchema can all be updated in place. The Server must continue to 
+point to the same logical instance.  
+
+
 
 ## Properties
 You can specify the following properties:

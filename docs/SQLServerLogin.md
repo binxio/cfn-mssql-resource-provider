@@ -11,12 +11,21 @@ Properties:
   DefaultDatabase: String
   Password: String
   PasswordParameterName: String
+  PasswordHash: String
   Server:
     URL: mssql://<user>@<host>:<port>/master
     Password: String
     PasswordParameterName: String
   ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-vpc-${AppVPC}'
 ```
+
+This will execute the following SQL statement on create:
+```SQL
+   CREATE LOGIN [<LoginName>]
+   WITH PASSWORD = '<password>',
+        DEFAULT_DATABASE = [<database>]
+```
+The LoginName, Password and Database can all be updated in place.
 
 ## Properties
 You can specify the following properties:
@@ -25,6 +34,7 @@ You can specify the following properties:
 - `DefaultDatabase` - for the login, default is master (optional)
 - `Password` - to identify the user with.  (optional)
 - `PasswordParameterName` - name of the parameter in the store containing the password of the user (optional)
+- `PasswordHash` - hash of the password, to force and update of the password (optional)
 - `Server` - server connection
     - `URL` - jdbc url point to the server to connect  (required)
     - `Password` - to identify the user with. (optional)

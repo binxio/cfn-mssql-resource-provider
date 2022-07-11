@@ -1,6 +1,6 @@
 import logging
-import textwrap
-from typing import Optional
+
+import pymssql
 
 from mssql_resource_provider import connection_info
 from mssql_resource_provider.base import MSSQLResource
@@ -36,27 +36,11 @@ class MSSQLDatabase(MSSQLResource):
     def old_name(self) -> str:
         return self.get_old("Name")
 
-    def get_database_id(self) -> Optional[str]:
-        try:
-            with self.connection.cursor() as cursor:
-                cursor.execute(
-                    f"""
-                    SELECT database_id FROM master.sys.databases 
-                    WHERE name = '{MSSQLResource.safe(self.name)}'
-                    """
-                )
-                rows = cursor.fetchone()
-        except Exception as e:
-            rows = None
-            log.error("%s", e)
-
-        return rows[0] if rows else None
-
     @property
     def url(self):
         return "mssql:%s:database:%s" % (
             self.logical_resource_id,
-            self.get_database_id(),
+            self.get_database_id(self.name),
         )
 
     def create(self):
@@ -66,9 +50,9 @@ class MSSQLDatabase(MSSQLResource):
                 cursor.execute(f"CREATE DATABASE [{self.name}]")
             self.physical_resource_id = self.url
             self.set_attribute("Name", self.name)
-        except Exception as e:
+        except pymssql.StandardError as error:
             self.physical_resource_id = "could-not-create"
-            self.fail("Failed to create database, %s" % e)
+            self.report_failure(error)
         finally:
             self.close()
 
@@ -81,14 +65,21 @@ class MSSQLDatabase(MSSQLResource):
                 )
             self.physical_resource_id = self.url
             self.set_attribute("Name", self.name)
-        except Exception as e:
-            self.fail("Failed to rename database, %s" % e)
+        except pymssql.StandardError as error:
+            self.report_failure(error)
+        finally:
+            self.close()
+
+    def database_exists(self, name: str) -> bool:
+        try:
+            self.connect(autocommit=True)
+            return self.get_database_id(self.name)
         finally:
             self.close()
 
     def update(self):
         if self.name != self.old_name:
-            if not self.get_database_id():
+            if not self.database_exists(self.name):
                 self.rename_database()
             else:
                 self.fail(f"database {self.name} already exists")
@@ -104,8 +95,8 @@ class MSSQLDatabase(MSSQLResource):
             self.connect(autocommit=True)
             with self.connection.cursor() as cursor:
                 cursor.execute(f"DROP DATABASE IF EXISTS [{self.name}]")
-        except Exception as e:
-            return self.fail(str(e))
+        except pymssql.StandardError as error:
+            self.report_failure(error)
         finally:
             self.close()
 

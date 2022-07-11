@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:sqlserver://localhost:1444;encrypt=true;trustServerCertificate=true;</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="sqlserver://markiemark@localhost" uuid="bcc31dca-8de7-490e-9e57-3be401fbf92f">
+      <driver-ref>sqlserver.ms</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</jdbc-driver>
+      <jdbc-url>jdbc:sqlserver://localhost:1444;encrypt=true;trustServerCertificate=true;</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

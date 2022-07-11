@@ -1,5 +1,7 @@
-import boto3
 import logging
+from typing import Optional
+
+import boto3
 import pymssql
 from cfn_resource_provider import ResourceProvider
 
@@ -68,7 +70,7 @@ class MSSQLResource(ResourceProvider):
 
     def connect(self, autocommit: bool = False):
         try:
-            self.connection = pymssql.connect(**self.connection_info)
+            self.connection = pymssql.connect(**self.connection_info, charset="utf8")
             self.connection.autocommit(autocommit)
         except Exception as e:
             raise ValueError("Failed to connect, %s" % e)
@@ -88,3 +90,62 @@ class MSSQLResource(ResourceProvider):
     @staticmethod
     def safe(s):
         return s.replace("'", "''")
+
+    def get_database_id(self, name) -> Optional[str]:
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT schema_id FROM sys.databases 
+                    WHERE name = '{MSSQLResource.safe(name)}'
+                    """
+                )
+                rows = cursor.fetchone()
+        except pymssql.OperationalError:
+            rows = None
+
+        return rows[0] if rows else None
+
+    def get_database_id(self, database: str) -> Optional[str]:
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT database_id FROM master.sys.databases
+                    WHERE name = '{MSSQLResource.safe(database)}'
+                    """
+                )
+                rows = cursor.fetchone()
+        except pymssql.OperationalError:
+            rows = None
+
+        return rows[0] if rows else None
+
+    def get_user_id(self, database: str, username: str) -> Optional[str]:
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT principal_id FROM [{database}].sys.database_principals
+                    WHERE name = '{MSSQLResource.safe(username)}'
+                    """
+                )
+                rows = cursor.fetchone()
+        except pymssql.OperationalError:
+            rows = None
+
+        return rows[0] if rows else None
+
+    @staticmethod
+    def get_exception_message(error: pymssql.StandardError) -> str:
+        """
+        returns a readable message of max 200 characters
+        """
+        number, msg = error.args
+        if isinstance(msg, bytes):
+            msg = str(msg, "utf8")
+        return f"{number}:{msg}"
+
+    def report_failure(self, error: pymssql.StandardError):
+        self.fail(self.get_exception_message(error)[0:200])

@@ -16,6 +16,12 @@ Properties:
   ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-vpc-${AppVPC}'
 ```
 
+This will execute the following SQL statement on create:
+```SQL
+   CREATE DATABASE [<Name>]
+```
+
+
 ## Properties
 You can specify the following properties:
 

@@ -1,10 +1,10 @@
-import uuid
 import json
 import logging
+import uuid
 from typing import Union
 from unittest import TestCase
+
 from cfn_resource_provider import ResourceProvider
-import mssql_resource_provider
 
 
 class Request:

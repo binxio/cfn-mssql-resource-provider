@@ -1,13 +1,9 @@
-import boto3
 import logging
-from typing import Optional
+
 import pymssql
-from botocore.exceptions import ClientError
-from cfn_resource_provider import ResourceProvider
 
 from mssql_resource_provider import connection_info
 from mssql_resource_provider.base import MSSQLResource
-from mssql_resource_provider.connection_info import _get_password_from_dict
 
 log = logging.getLogger()
 
@@ -47,12 +43,12 @@ class MSSQLUser(MSSQLResource):
         self.request_schema = request_schema
 
     @property
-    def user_name(self):
+    def username(self):
         return self.get("UserName")
 
     @property
-    def old_user_name(self):
-        return self.get_old("UserName", self.user_name)
+    def old_username(self):
+        return self.get_old("UserName", self.username)
 
     @property
     def default_schema(self):
@@ -70,59 +66,27 @@ class MSSQLUser(MSSQLResource):
     def url(self):
         return "mssql:%s:database:%s:user:%s" % (
             self.logical_resource_id,
-            self.get_database_id(),
-            self.get_user_id(),
+            self.get_database_id(self.database),
+            self.get_user_id(self.database, self.username),
         )
 
     @property
     def database(self):
         return self.connection_info["database"]
 
-    def get_database_id(self) -> Optional[str]:
-        try:
-            with self.connection.cursor() as cursor:
-                cursor.execute(
-                    f"""
-                    SELECT database_id FROM master.sys.databases
-                    WHERE name = '{MSSQLResource.safe(self.database)}'
-                    """
-                )
-                rows = cursor.fetchone()
-        except Exception as e:
-            rows = None
-            log.error("%s", e)
-
-        return rows[0] if rows else None
-
-    def get_user_id(self) -> Optional[str]:
-        try:
-            with self.connection.cursor() as cursor:
-                cursor.execute(
-                    f"""
-                    SELECT principal_id FROM [{self.database}].sys.database_principals
-                    WHERE name = '{MSSQLResource.safe(self.user_name)}'
-                    """
-                )
-                rows = cursor.fetchone()
-        except Exception as e:
-            rows = None
-            log.error("%s", e)
-
-        return rows[0] if rows else None
-
     def drop_user(self):
         with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP USER IF EXISTS [{self.user_name}]")
+            cursor.execute(f"DROP USER IF EXISTS [{self.username}]")
 
     def update_user(self):
-        log.info("update user %s", self.user_name)
+        log.info("update user %s", self.username)
         with self.connection.cursor() as cursor:
-            if self.user_name != self.old_user_name:
+            if self.username != self.old_username:
                 cursor.execute(
                     f"""
-                ALTER USER [{self.old_user_name}] 
+                ALTER USER [{self.old_username}] 
                 WITH 
-                   NAME = [{self.user_name}], 
+                   NAME = [{self.username}], 
                    LOGIN = [{self.login_name}],
                    DEFAULT_SCHEMA = [{self.default_schema}]
                 """
@@ -130,7 +94,7 @@ class MSSQLUser(MSSQLResource):
             else:
                 cursor.execute(
                     f"""
-                    ALTER USER [{self.user_name}] 
+                    ALTER USER [{self.username}] 
                     WITH 
                        LOGIN = [{self.login_name}],
                        DEFAULT_SCHEMA = [{self.default_schema}]
@@ -138,14 +102,14 @@ class MSSQLUser(MSSQLResource):
                 )
 
             self.physical_resource_id = self.url
-            self.set_attribute("UserName", self.user_name)
+            self.set_attribute("UserName", self.username)
 
     def create_user(self):
         log.info("create user %s", self.login_name)
         with self.connection.cursor() as cursor:
             cursor.execute(
                 f"""
-                CREATE USER [{self.user_name}] 
+                CREATE USER [{self.username}] 
                 FOR 
                    LOGIN [{self.login_name}]
                 WITH
@@ -154,15 +118,15 @@ class MSSQLUser(MSSQLResource):
             )
 
             self.physical_resource_id = self.url
-            self.set_attribute("UserName", self.user_name)
+            self.set_attribute("UserName", self.username)
 
     def create(self):
         try:
             self.connect()
             self.create_user()
-        except Exception as e:
+        except pymssql.StandardError as error:
             self.physical_resource_id = "could-not-create"
-            self.fail("Failed to create user, %s" % e)
+            self.report_failure(error)
         finally:
             self.close()
 
@@ -173,8 +137,8 @@ class MSSQLUser(MSSQLResource):
                 self.update_user()
             else:
                 self.create()
-        except Exception as e:
-            self.fail("Failed to update the user, %s" % e)
+        except pymssql.StandardError as error:
+            self.report_failure(error)
         finally:
             self.close()
 
@@ -185,8 +149,8 @@ class MSSQLUser(MSSQLResource):
         try:
             self.connect()
             self.drop_user()
-        except Exception as e:
-            return self.fail(str(e))
+        except pymssql.StandardError as error:
+            self.report_failure(error)
         finally:
             self.close()
 
