@@ -128,7 +128,7 @@ demo:
 		--parameter-overrides VPC=$$VPC_ID Subnets=$$SUBNET_IDS SecurityGroup=$$SG_ID
 
 deploy-secret-provider:
-	curl -sS -o /tmp/cfn-secret-provider.yaml https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-2.0.0.yaml
+	curl -sS -o /tmp/cfn-secret-provider.yaml https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-2.0.1.yaml
 	aws cloudformation deploy \
 		--stack-name cfn-secret-provider \
 		--template-file /tmp/cfn-secret-provider.yaml  \
