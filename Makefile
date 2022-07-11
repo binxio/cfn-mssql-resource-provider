@@ -128,7 +128,7 @@ demo:
 		--parameter-overrides VPC=$$VPC_ID Subnets=$$SUBNET_IDS SecurityGroup=$$SG_ID
 
 deploy-secret-provider:
-	curl -sS -o /tmp/cfn-secret-provider.yaml https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-1.4.4.yaml
+	curl -sS -o /tmp/cfn-secret-provider.yaml https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-2.0.0.yaml
 	aws cloudformation deploy \
 		--stack-name cfn-secret-provider \
 		--template-file /tmp/cfn-secret-provider.yaml  \
@@ -140,3 +140,10 @@ delete-demo:
 	aws cloudformation delete-stack --stack-name $(NAME)-demo
 	aws cloudformation wait stack-delete-complete  --stack-name $(NAME)-demo
 
+deploy-pipeline:
+	aws cloudformation deploy \
+                --capabilities CAPABILITY_IAM \
+                --stack-name $(NAME)-pipeline \
+                --template-file ./cloudformation/cicd-pipeline.yaml \
+                --parameter-overrides \
+                        S3BucketPrefix=$(S3_BUCKET_PREFIX)

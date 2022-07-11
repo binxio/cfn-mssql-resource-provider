@@ -77,7 +77,7 @@ Resources:
       Name: kong
       Server:
         URL: !Sub 'mssql://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !GetAtt DBPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
 
   KongLogin:
@@ -85,12 +85,12 @@ Resources:
     Properties:
       LoginName: kong
       DefaultDatabase: !GetAtt KongDatabase.Name
-      PasswordParameterName: !Sub '/${AWS::StackName}/mssql/kong/password'
+      PasswordParameterName: !GetAtt KongPassword.ParameterName
       PasswordHash: !GetAtt KongPassword.Hash
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
       Server:
         URL: !Sub 'mssql://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !GetAtt DBPassword.ParameterName
 
   KongUser:
     Type: Custom::MSSQLUser
@@ -99,7 +99,7 @@ Resources:
       LoginName: !GetAtt KongLogin.LoginName
       Server:
         URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !GetAtt KongPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
 
   KongDatabaseGrant:
@@ -110,7 +110,7 @@ Resources:
       Database: !GetAtt KongUser.UserName
       Server:
         URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !GetAtt DBPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
 
 Outputs:
