@@ -91,7 +91,7 @@ If you have not done so, please install the secret provider too.
 aws cloudformation create-stack \
    --stack-name cfn-secret-provider \
    --capabilities CAPABILITY_IAM \
-   --template-url https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-1.4.4.yaml 
+   --template-url https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-2.0.1.yaml 
 aws cloudformation wait stack-create-complete --stack-name cfn-secret-provider
 ```
 
