@@ -52,7 +52,9 @@ It is quite easy: you specify a CloudFormation resource of the [Custom::MSSQLLog
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
 
 ```
-Cloudformation creates the database 'kong', the login 'kong' and the user 'kong' in the database.
+Cloudformation creates the database 'kong', the login 'kong' and the user 'kong' in the database.  
+The user is made database owner by granting 'ALL' permissions on the database. From there on,
+the application team can manage their own database schema.
 
 
 ## Installation
