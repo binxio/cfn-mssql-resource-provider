@@ -106,8 +106,8 @@ Resources:
     Type: Custom::MSSQLDatabaseGrant
     Properties:
       Permission: ALL
-      UserName: kong
-      Database: !GetAtt KongUser.UserName
+      UserName: !GetAtt KongUser.UserName
+      Database: !GetAtt KongDatabase.Name
       Server:
         URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
         PasswordParameterName: !GetAtt DBPassword.ParameterName

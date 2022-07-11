@@ -142,10 +142,17 @@ class MSSQLResource(ResourceProvider):
         """
         returns a readable message of max 200 characters
         """
-        number, msg = error.args
-        if isinstance(msg, bytes):
-            msg = str(msg, "utf8")
-        return f"{number}:{msg}"
+        if (
+            hasattr(error, "args")
+            and isinstance(error.args, tuple)
+            and len(error.args) == 2
+        ):
+            number, msg = error.args
+            if isinstance(msg, bytes):
+                msg = str(msg, "utf8")
+            return f"{number}:{msg}"
+        else:
+            return str(error)
 
     def report_failure(self, error: pymssql.StandardError):
         self.fail(self.get_exception_message(error)[0:200])
