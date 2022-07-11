@@ -71,10 +71,8 @@ Resources:
 
   KongDatabase:
     Type: Custom::MSSQLDatabase
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
-      Name: kong
+      Name: kong10
       Server:
         URL: !Sub 'mssql://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}'
         PasswordParameterName: !GetAtt DBPassword.ParameterName
@@ -98,8 +96,8 @@ Resources:
       UserName: kong
       LoginName: !GetAtt KongLogin.LoginName
       Server:
-        URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
-        PasswordParameterName: !GetAtt KongPassword.ParameterName
+        URL: !Sub 'mssql://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
+        PasswordParameterName: !GetAtt DBPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
 
   KongDatabaseGrant:
@@ -109,7 +107,7 @@ Resources:
       UserName: !GetAtt KongUser.UserName
       Database: !GetAtt KongDatabase.Name
       Server:
-        URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
+        URL: !Sub 'mssql://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
         PasswordParameterName: !GetAtt DBPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
 
