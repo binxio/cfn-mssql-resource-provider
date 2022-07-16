@@ -56,9 +56,9 @@ The custom provider does suport renaming of the login name and the username. In 
 can move the user to another database by changing the database name in the server URL.  
 but you cannot them to another server. 
 
-Finally, you can grant permissions to the user in the database. In this case we grant the
-user ALL permissions on the database, so that the development team can manage the database
-schema.
+Finally, you use the [Custom::MSSQLDatabaseGrant](docs/MSSQLDatabaseGrant.md) to grant permissions to the user in the database.  
+In this case we grant the user `ALL` permissions on the database, so that the development team can manage the database  
+schema themselves.
 
 ```yaml
   KongDatabaseGrant:
@@ -75,7 +75,7 @@ schema.
 That is all there is to it!
 
 ## Installation
-To install this SQLServer custom Resource provider, type:
+To install this SQLServer custom resource provider, type:
 
 ```sh
 read -p "VPC ID:" VPC_ID
