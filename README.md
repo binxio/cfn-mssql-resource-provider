@@ -1,34 +1,45 @@
 # cfn-mssql-resource-provider
 
-Although CloudFormation is very good in creating Microsoft MSSQL database servers with Amazon RDS, the mundane task of creating databases, logins and users is not supported. 
-This custom MSSQL resource provider automates the provisioning of MSSQL databases, login's and users.
+Although CloudFormation is very good in creating Microsoft MSSQL database servers with  
+Amazon RDS, the mundane task of creating databases, logins and users is not supported.  
+This custom MSSQL resource provider automates the provisioning of MSSQL databases, 
+login's and users.
 
-
-## How does it work?
-It is quite easy: you specify a CloudFormation resource of the [Custom::MSSQLLogin](docs/MSSQLUser.md), as follows:
-
+## How do I create a MSSQL Database?
+To create a logical database on a Microsoft SQLServer using Cloudformation, you can use the  
+following custom resource:
 ```yaml
   KongDatabase:
     Type: Custom::MSSQLDatabase
     DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       Name: kong
       Server:
         URL: !Sub 'mssql://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !GetAtt DBPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
+```
+You just specify the name of the database and the server on which it is hosted. The custom provider  
+does suport renaming of the  database, but you cannot "move" it another server.
 
+
+## How do I create a MSSQL User?
+Although there are 13 types of users on Microsoft SQLServer, the provider only  
+creates a database user for a server authentication login. An example is shown below, using
+the [Custom::MSSQLLogin](docs/MSSQLLogin.md) and 
+[Custom::MSSQLUser](docs/MSSQLUser.md) resources.
+
+```yaml
   KongLogin:
     Type: Custom::MSSQLLogin
     Properties:
       LoginName: kong
       DefaultDatabase: !GetAtt KongDatabase.Name
-      PasswordParameterName: !Sub '/${AWS::StackName}/mssql/kong/password'
+      PasswordParameterName: !GetAtt KongPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
       Server:
         URL: !Sub 'mssql://sa@${Database.Endpoint.Address}:${Database.Endpoint.Port}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !Ref DBPassword.ParameterName
 
   KongUser:
     Type: Custom::MSSQLUser
@@ -37,9 +48,19 @@ It is quite easy: you specify a CloudFormation resource of the [Custom::MSSQLLog
       LoginName: !GetAtt KongLogin.LoginName
       Server:
         URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !GetAtt DBPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
+```
 
+The custom provider does suport renaming of the login name and the username. In addition, you
+can move the user to another database by changing the database name in the server URL.  
+but you cannot them to another server. 
+
+Finally, you can grant permissions to the user in the database. In this case we grant the
+user ALL permissions on the database, so that the development team can manage the database
+schema.
+
+```yaml
   KongDatabaseGrant:
     Type: Custom::MSSQLDatabaseGrant
     Properties:
@@ -48,27 +69,18 @@ It is quite easy: you specify a CloudFormation resource of the [Custom::MSSQLLog
       Database: !GetAtt KongDatabase.Name
       Server:
         URL: !Sub 'mssql://${Database.Endpoint.Address}:${Database.Endpoint.Port}/${KongDatabase.Name}'
-        PasswordParameterName: !Sub '/${AWS::StackName}/mssql/sa/password'
+        PasswordParameterName: !GetAtt DBPassword.ParameterName
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-mssql-resource-provider-${VPC}'
-
 ```
-Cloudformation creates the database 'kong', the login 'kong' and the user 'kong' in the database.  
-The user is made database owner by granting 'ALL' permissions on the database. From there on,
-the application team can manage their own database schema.
-
+That is all there is to it!
 
 ## Installation
-To install this Custom Resource, type:
+To install this SQLServer custom Resource provider, type:
 
 ```sh
-export VPC_ID=$(aws ec2  --output text --query 'Vpcs[?IsDefault].VpcId' describe-vpcs)
-export SUBNET_IDS=$(aws ec2 describe-route-tables \
-                       --filters Name=vpc-id,Values=$VPC_ID \
-                       --query 'join(`,`, RouteTables[?Routes[?GatewayId == null]].Associations[].SubnetId)' \
-		       --output text)
-export SG_ID=$(aws ec2 --output text --query "SecurityGroups[*].GroupId" \
-			describe-security-groups --group-names default  --filters Name=vpc-id,Values=$VPC_ID)
-
+read -p "VPC ID:" VPC_ID
+read -p "private subnet ids:" SUBNET_IDS
+read -p "default security group:" SG_ID
 aws cloudformation create-stack \
 	--capabilities CAPABILITY_IAM \
 	--stack-name cfn-mssql-resource-provider \
@@ -80,31 +92,30 @@ aws cloudformation create-stack \
 
 aws cloudformation wait stack-create-complete  --stack-name cfn-mssql-resource-provider 
 ```
-Note that this uses the default VPC, private subnets and security group. As the Lambda functions needs to connect to the database. You will need to 
-install this custom resource provider for each vpc that you want to be able to create database users.
+As the provider needs to  connect to the database server, we connect the Lambda function on private  
+subnets of the VPC and provide it with a security group which grants access. Install the custom resource 
+provider on each vpc that you want to be able to create databases, logins and users.
 
 This CloudFormation template will use our pre-packaged provider from `s3://binxio-public/lambdas/cfn-mssql-resource-provider-0.2.4.zip`.
 
-If you have not done so, please install the secret provider too.
-
-```
-aws cloudformation create-stack \
-   --stack-name cfn-secret-provider \
-   --capabilities CAPABILITY_IAM \
-   --template-url https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-2.0.1.yaml 
-aws cloudformation wait stack-create-complete --stack-name cfn-secret-provider
-```
-
 ## Demo
-To install the simple sample of the Custom Resource, type:
+To install the simple sample of the Custom Resource provider, type:
 
 ```sh
+## install the secret provider
+aws cloudformation create-stack \
+--stack-name cfn-secret-provider \
+--capabilities CAPABILITY_IAM \
+--template-url https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-2.0.1.yaml
+aws cloudformation wait stack-create-complete --stack-name cfn-secret-provider
+
 aws cloudformation create-stack --stack-name cfn-database-user-provider-demo \
 	--template-body file://cloudformation/demo-stack.yaml
 aws cloudformation wait stack-create-complete  --stack-name cfn-database-user-provider-demo
 ```
-It will create a MSSQL database too, so it is quite time consuming...
+It will create a Microsoft SQLServer database server too, it will take quiet some time.
 
 ## Conclusion
-With this solution MSSQL users and databases can be provisioned just like a database, while keeping the
-passwords safely stored in the AWS Parameter Store.
+With this solution, you can create Microsoft SQLServer databases and users with Cloudformation.  
+You can host multiple teams on the same server by providing them with their own database  
+and database users, while you can share the passwords via the AWS Parameter Store.
