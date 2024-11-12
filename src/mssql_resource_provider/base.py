@@ -138,7 +138,7 @@ class MSSQLResource(ResourceProvider):
         return rows[0] if rows else None
 
     @staticmethod
-    def get_exception_message(error: pymssql.StandardError) -> str:
+    def get_exception_message(error: pymssql.Error) -> str:
         """
         returns a readable message of max 200 characters
         """
@@ -154,5 +154,5 @@ class MSSQLResource(ResourceProvider):
         else:
             return str(error)
 
-    def report_failure(self, error: pymssql.StandardError):
+    def report_failure(self, error: pymssql.Error):
         self.fail(self.get_exception_message(error)[0:200])

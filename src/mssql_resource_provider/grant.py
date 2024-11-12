@@ -83,7 +83,7 @@ class MSSQLDatabaseGrant(MSSQLResource):
                     f"GRANT {self.permission} ON DATABASE::[{self.database}] TO [{self.username}]"
                 )
             self.physical_resource_id = self.url
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.physical_resource_id = "could-not-create"
             self.report_failure(error)
         finally:
@@ -96,7 +96,7 @@ class MSSQLDatabaseGrant(MSSQLResource):
                 cursor.execute(
                     f"REVOKE {self.permission} ON DATABASE::[{self.database}] FROM [{self.username}]"
                 )
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.report_failure(error)
         finally:
             self.close()

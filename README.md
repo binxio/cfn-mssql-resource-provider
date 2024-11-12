@@ -81,37 +81,35 @@ To install this SQLServer custom resource provider, type:
 read -p "VPC ID:" VPC_ID
 read -p "private subnet ids:" SUBNET_IDS
 read -p "default security group:" SG_ID
-aws cloudformation create-stack \
+aws cloudformation deploy \
 	--capabilities CAPABILITY_IAM \
 	--stack-name cfn-mssql-resource-provider \
-	--template-body file://cloudformation/cfn-resource-provider.yaml  \
-	--parameters \
-	            ParameterKey=VPC,ParameterValue=$VPC_ID \
-	            ParameterKey=Subnets,ParameterValue=$SUBNET_IDS \
-                ParameterKey=SecurityGroup,ParameterValue=$SG_ID
-
-aws cloudformation wait stack-create-complete  --stack-name cfn-mssql-resource-provider 
+	--template-file ./cloudformation/cfn-resource-provider.yaml  \
+	--parameter-overrides \
+	  "VPC=$VPC_ID" "Subnets=$SUBNET_IDS" "SecurityGroup=$SG_ID"
 ```
-As the provider needs to  connect to the database server, we connect the Lambda function on private  
+As the provider needs to connect to the database server, we connect the Lambda function on private  
 subnets of the VPC and provide it with a security group which grants access. Install the custom resource 
 provider on each vpc that you want to be able to create databases, logins and users.
 
-This CloudFormation template will use our pre-packaged provider from `s3://binxio-public/lambdas/cfn-mssql-resource-provider-0.2.4.zip`.
+This CloudFormation template will use our pre-packaged provider from `463637877380.dkr.ecr.eu-central-1.amazonaws.com/xebia/cfn-mssql-resource-provider:0.0.0`.
 
 ## Demo
 To install the simple sample of the Custom Resource provider, type:
 
 ```sh
 ## install the secret provider
-aws cloudformation create-stack \
+
+curl -o /tmp/cfn-secret-provider.yaml \
+	-sS https://raw.githubusercontent.com/binxio/cfn-secret-provider/refs/tags/v3.0.1/cloudformation/cfn-resource-provider.yaml
+
+aws cloudformation deploy \
 --stack-name cfn-secret-provider \
 --capabilities CAPABILITY_IAM \
---template-url https://binxio-public-eu-central-1.s3.eu-central-1.amazonaws.com/lambdas/cfn-secret-provider-2.0.1.yaml
-aws cloudformation wait stack-create-complete --stack-name cfn-secret-provider
+--template-file /tmp/cfn-secret-provider.yaml
 
-aws cloudformation create-stack --stack-name cfn-database-user-provider-demo \
-	--template-body file://cloudformation/demo-stack.yaml
-aws cloudformation wait stack-create-complete  --stack-name cfn-database-user-provider-demo
+aws cloudformation deploy --stack-name cfn-database-user-provider-demo \
+	--template-file ./cloudformation/demo-stack.yaml
 ```
 It will create a Microsoft SQLServer database server too, it will take quiet some time.
 

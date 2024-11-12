@@ -28,7 +28,7 @@ get_public_subnets() {
 
         aws ec2 describe-subnets \
                 --filter Name=subnet-id,Values=$(sed -e 's/  */,/g'  <<< $values) \
-                --query 'join(`\n`, sort_by(Subnets,&AvailabilityZone)[*].SubnetId)' \
+                --query 'join(`,`, sort_by(Subnets,&AvailabilityZone)[*].SubnetId)' \
                 --output text
 }
 

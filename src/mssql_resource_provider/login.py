@@ -130,7 +130,7 @@ class MSSQLLogin(MSSQLResource):
         try:
             self.connect()
             self.create_login()
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.physical_resource_id = "could-not-create"
             self.report_failure(error)
         finally:
@@ -140,7 +140,7 @@ class MSSQLLogin(MSSQLResource):
         try:
             self.connect()
             self.update_login()
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.report_failure(error)
         finally:
             self.close()
@@ -153,7 +153,7 @@ class MSSQLLogin(MSSQLResource):
             self.connect()
             if self.get_principal_id():
                 self.drop_login()
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.report_failure(error)
         finally:
             self.close()

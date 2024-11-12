@@ -50,7 +50,7 @@ class MSSQLDatabase(MSSQLResource):
                 cursor.execute(f"CREATE DATABASE [{self.name}]")
             self.physical_resource_id = self.url
             self.set_attribute("Name", self.name)
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.physical_resource_id = "could-not-create"
             self.report_failure(error)
         finally:
@@ -65,7 +65,7 @@ class MSSQLDatabase(MSSQLResource):
                 )
             self.physical_resource_id = self.url
             self.set_attribute("Name", self.name)
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.report_failure(error)
         finally:
             self.close()
@@ -95,7 +95,7 @@ class MSSQLDatabase(MSSQLResource):
             self.connect(autocommit=True)
             with self.connection.cursor() as cursor:
                 cursor.execute(f"DROP DATABASE IF EXISTS [{self.name}]")
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.report_failure(error)
         finally:
             self.close()

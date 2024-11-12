@@ -124,7 +124,7 @@ class MSSQLUser(MSSQLResource):
         try:
             self.connect()
             self.create_user()
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.physical_resource_id = "could-not-create"
             self.report_failure(error)
         finally:
@@ -137,7 +137,7 @@ class MSSQLUser(MSSQLResource):
                 self.update_user()
             else:
                 self.create()
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.report_failure(error)
         finally:
             self.close()
@@ -149,7 +149,7 @@ class MSSQLUser(MSSQLResource):
         try:
             self.connect()
             self.drop_user()
-        except pymssql.StandardError as error:
+        except pymssql.Error as error:
             self.report_failure(error)
         finally:
             self.close()
