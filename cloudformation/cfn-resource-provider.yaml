@@ -53,7 +53,7 @@ Resources:
       Description: CloudFormation Custom:MSSQL resource implementation
       PackageType: Image
       Code:
-        ImageUri: 463637877380.dkr.ecr.eu-central-1.amazonaws.com/xebia/cfn-mssql-resource-provider:0.2.4-3a26965
+        ImageUri: 463637877380.dkr.ecr.eu-central-1.amazonaws.com/xebia/cfn-mssql-resource-provider:1.0.0
       VpcConfig:
         SecurityGroupIds:
           - !Ref 'SecurityGroup'

@@ -92,7 +92,7 @@ As the provider needs to connect to the database server, we connect the Lambda f
 subnets of the VPC and provide it with a security group which grants access. Install the custom resource 
 provider on each vpc that you want to be able to create databases, logins and users.
 
-This CloudFormation template will use our pre-packaged provider from `463637877380.dkr.ecr.eu-central-1.amazonaws.com/xebia/cfn-mssql-resource-provider:0.0.0`.
+This CloudFormation template will use our pre-packaged provider from `463637877380.dkr.ecr.eu-central-1.amazonaws.com/xebia/cfn-mssql-resource-provider:1.0.0`.
 
 ## Demo
 To install the simple sample of the Custom Resource provider, type:
